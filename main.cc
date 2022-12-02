@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <iomanip>
 
 using namespace std;
 
@@ -64,30 +65,22 @@ void find_answer(vector<Customer> &customers, vector<vector<float>> &matrix, vec
     while (visited_customers < customers.size() - 1) {
         int current_truck = trucks.size() - 1;
         for (int i = 0; i < customers.size(); i++) {
-            cout << i << endl;
             if (i == trucks[current_truck].act_location) {
-                cout << "1 IF" << endl;
                 continue;
             }
             if (customers[i].is_served == true) {
-                cout << "2 IF" << endl;
                 continue;
             }
             if (trucks[current_truck].act_capacity < customers[i].demand) {
-                cout << trucks[current_truck].act_capacity << " " << customers[i].demand << endl;
-                cout << "3 IF" << endl;
                 continue;
             }
             if (trucks[current_truck].act_time + matrix[trucks[current_truck].act_location][i] > customers[i].due_date) {
-                cout << "4 IF" << endl;
                 continue;
             }
             if (trucks[current_truck].act_time + matrix[trucks[current_truck].act_location][i] + customers[i].service_time + matrix[i][0] > customers[0].due_date) {
-                cout << "5 IF" << endl;
                 continue;
             }
             if (customers[i].ready_time + customers[i].service_time + matrix[i][0] > customers[0].due_date) {
-                cout << "6 IF" << endl;
                 continue;
             }
 
@@ -98,9 +91,7 @@ void find_answer(vector<Customer> &customers, vector<vector<float>> &matrix, vec
         }
         if (next_location != 0) {
             trucks[current_truck].customers.push_back(next_location);
-            // cout << "Porownanie: " << matrix[trucks[current_truck].act_location][next_location] << " < " << customers[next_location].ready_time << endl;
-            if (matrix[trucks[current_truck].act_location][next_location] < customers[next_location].ready_time) {
-                // cout << "Liczy: " << trucks[current_truck].act_time << " + " << customers[next_location].ready_time << "+" << customers[next_location].service_time << "-" << trucks[current_truck].act_time << endl;
+            if (matrix[trucks[current_truck].act_location][next_location] + trucks[current_truck].act_time < customers[next_location].ready_time) {
                 trucks[current_truck].visit(customers[next_location].ready_time + customers[next_location].service_time - trucks[current_truck].act_time, customers[next_location].demand, next_location);
             } else {
                 trucks[current_truck].visit(matrix[trucks[current_truck].act_location][next_location] + customers[next_location].service_time, customers[next_location].demand, next_location);
@@ -108,13 +99,12 @@ void find_answer(vector<Customer> &customers, vector<vector<float>> &matrix, vec
             visited_customers++;
             customers[next_location].is_served = true;
             next_location = 0;
+            minimum_time = MIN_TIME;
         } else if (trucks[current_truck].customers.size() == 0) {
             trucks.clear();
             break;
         } else {
-            // cout << trucks[current_truck].act_location << " " << trucks[current_truck].act_time << " " << matrix[trucks[current_truck].act_location][0] << endl;
             trucks[current_truck].act_time += matrix[trucks[current_truck].act_location][0];
-            // cout << "Nr trucka: " << current_truck << " Act_time: " << trucks[current_truck].act_time << endl;
             minimum_time = MIN_TIME;
             next_location = 0;
             Truck new_truck = Truck(capacity);
