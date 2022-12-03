@@ -10,9 +10,9 @@ struct Truck {
                           act_location(0),
                           act_time(0) {}
 
-    void visit(float act_time, int act_capacity, int act_location) {
-        this->act_capacity -= act_capacity;
-        this->act_time += act_time;
-        this->act_location = act_location;
-    }
+    // void visit(float act_time, int act_capacity, int act_location) {
+    //     this->act_capacity -= act_capacity;
+    //     this->act_time += act_time;
+    //     this->act_location = act_location;
+    // }
 };
