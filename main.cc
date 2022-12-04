@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -6,7 +7,6 @@
 #include <random>
 #include <sstream>
 #include <vector>
-#include <chrono>
 
 using namespace std;
 
@@ -16,9 +16,10 @@ using namespace std;
 #define DEPOT 0
 #define MIN_TIME 99999999
 
+random_device dev;
+mt19937 rng(dev());
+
 int random(int lower_bound, int higher_bound) {
-    random_device dev;
-    mt19937 rng(dev());
     uniform_int_distribution<mt19937::result_type> dist(lower_bound, higher_bound);
     return dist(rng);
 }
@@ -162,7 +163,6 @@ void find_answer(vector<Customer> &customers, vector<vector<float>> &matrix, vec
     trucks[trucks.size() - 1].act_time += matrix[trucks[trucks.size() - 1].act_location][0];
 }
 
-
 void sort_neighbourhood(vector<vector<Truck>> &neighbourhood) {
     vector<vector<Truck>> prev_neighbourhood;
     for (int i = 0; i < neighbourhood.size(); i++) {
@@ -241,7 +241,7 @@ void get_neighbourhood(vector<Customer> &customers, vector<vector<float>> &matri
                 }
             }
             possible_solution[vehicle_nr].customers.erase(possible_solution[vehicle_nr].customers.begin() + customer_nr_on_route);
-            
+
             // changing act_time in line where customer was deleted and where customer was put and act_capacity
             bool validate_route = true;
 
@@ -275,7 +275,6 @@ void get_neighbourhood(vector<Customer> &customers, vector<vector<float>> &matri
                 // cout << "Empty truck" << endl;
                 possible_solution.erase(possible_solution.begin() + vehicle_nr);
             }
-            
 
             if (validate_route) {
                 neighbourhood.push_back(possible_solution);
@@ -284,7 +283,6 @@ void get_neighbourhood(vector<Customer> &customers, vector<vector<float>> &matri
     }
     return;
 }
-
 
 bool in_tabu2(vector<vector<Truck>> &tabu_list, vector<Truck> &solution) {
     for (vector<Truck> tabu : tabu_list) {
@@ -354,7 +352,7 @@ void tabu_search(vector<Customer> &customers, vector<vector<float>> &matrix, vec
         vector<Truck> best_candidate;
         for (int i = 0; i < neigbourhood.size(); i++) {
             best_candidate.clear();
-            if (!in_tabu(tabu_list, neigbourhood[i])) {
+            if (!in_tabu2(tabu_list, neigbourhood[i])) {
                 for (int j = 0; j < neigbourhood[i].size(); j++) {
                     best_candidate.push_back(neigbourhood[i][j]);
                 }
