@@ -285,14 +285,15 @@ void get_neighbourhood(vector<Customer> &customers, vector<vector<float>> &matri
 }
 
 bool in_tabu2(vector<vector<Truck>> &tabu_list, vector<Truck> &solution) {
+    auto compare_trucks = [](Truck t1, Truck t2) {
+        return equal(t1.customers.begin(), t1.customers.end(), t2.customers.begin());
+    };
+
     for (vector<Truck> tabu : tabu_list) {
         if (tabu.size() != solution.size()) {
             continue;
         }
 
-        auto compare_trucks = [](Truck t1, Truck t2) {
-            return equal(t1.customers.begin(), t1.customers.end(), t2.customers.begin());
-        };
         if (equal(tabu.begin(), tabu.end(), solution.begin(), compare_trucks)) {
             return true;
         }
