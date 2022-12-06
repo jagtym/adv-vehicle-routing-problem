@@ -199,6 +199,12 @@ bool compare_solutions(vector<Truck> t1, vector<Truck> t2) {
     return false;
 }
 
+bool compare_solutions2(vector<Truck> &a, vector<Truck> &b) {
+    if (a.size() != b.size())
+        return a.size() < b.size();
+    return distance_sum(a) < distance_sum(b);
+}
+
 void get_neighbourhood(vector<Customer> &customers, vector<vector<float>> &matrix, vector<Truck> &current_solution, vector<vector<Truck>> &neighbourhood, int capacity) {
     int vehicle_nr = random(0, current_solution.size() - 1);
     int customer_nr_on_route = random(0, current_solution[vehicle_nr].customers.size() - 1);
@@ -346,9 +352,9 @@ void tabu_search(vector<Customer> &customers, vector<vector<float>> &matrix, vec
 
     while (true) {
         get_neighbourhood(customers, matrix, current_solution, neigbourhood, capacity);
-        // sort(neigbourhood.begin(), neigbourhood.end(), compare_solutions);
+        sort(neigbourhood.begin(), neigbourhood.end(), compare_solutions2);
         // cout << "Sort" << endl;
-        sort_neighbourhood(neigbourhood);
+        // sort_neighbourhood(neigbourhood);
         // cout << "Sorted" << endl;
         vector<Truck> best_candidate;
         for (int i = 0; i < neigbourhood.size(); i++) {
@@ -380,10 +386,10 @@ void tabu_search(vector<Customer> &customers, vector<vector<float>> &matrix, vec
             } else {
                 // Po zaczeciu brania gorszych ma czasem problem znalezc lepsze
                 // cout << "New solution is worse" << endl;
-                // current_solution.clear();
-                // for (int i = 0; i < best_candidate.size(); i++) {
-                //     current_solution.push_back(best_candidate[i]);
-                // }
+                current_solution.clear();
+                for (int i = 0; i < best_candidate.size(); i++) {
+                    current_solution.push_back(best_candidate[i]);
+                }
             }
             how_many--;
         }
@@ -440,7 +446,6 @@ int main(int argc, char *argv[]) {
     if (output_tabu.is_open()) {
         output_tabu.close();
     }
-    cout << "SIMEA" << endl;
     auto elapsed = std::chrono::high_resolution_clock::now() - start;
     long long microseconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     cout << "Czas: " << microseconds;
