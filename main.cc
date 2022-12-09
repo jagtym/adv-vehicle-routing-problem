@@ -189,11 +189,11 @@ void sort_neighbourhood(vector<vector<Truck>> &neighbourhood) {
     return;
 }
 
-bool compare_solutions(vector<Truck> t1, vector<Truck> t2) {
-    if (t1.size() > t2.size()) {
+bool compare_solutions(vector<Truck> &t1, vector<Truck> &t2) {
+    if (t1.size() < t2.size()) {
         return true;
     }
-    if (t1.size() == t2.size() && distance_sum(t1) > distance_sum(t2)) {
+    if (t1.size() == t2.size() && distance_sum(t1) < distance_sum(t2)) {
         return true;
     }
     return false;
