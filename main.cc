@@ -290,6 +290,134 @@ void get_neighbourhood(vector<Customer> &customers, vector<vector<float>> &matri
     return;
 }
 
+bool compare_trucks(Truck& t1, Truck& t2) {
+    return t1.customers.size() < t2.customers.size();
+}
+
+bool new_solution_better(vector<Truck> &prev_solution, vector<Truck> &new_solution) {
+    if (new_solution.size() < prev_solution.size()) {
+        return true;
+    }
+    if (new_solution.size() == prev_solution.size() && distance_sum(new_solution) < distance_sum(prev_solution)) {
+        return true;
+    }
+    return false;
+}
+
+void get_neighbourhood2(vector<Customer> &customers, vector<vector<float>> &matrix, vector<Truck> &current_solution, vector<vector<Truck>> &neighbourhood, int capacity, vector<Truck>& best_solution, int &iterator) {
+    // int vehicle_nr = random(0, current_solution.size() - 1);
+    // int customer_nr_on_route = random(0, current_solution[vehicle_nr].customers.size() - 1);
+    // int customer_nr = current_solution[vehicle_nr].customers[customer_nr_on_route];
+    if (iterator >= (current_solution.size() - 1) / 1) {
+        iterator = 0;
+    }
+    if (iterator == 0) {
+        sort(current_solution.begin(), current_solution.end(), compare_trucks);
+    }
+    bool found_better = false;
+    int vehicle_nr, customer_nr_on_route, customer_nr;
+    while (!found_better && iterator <= current_solution.size() - 1) {
+        vehicle_nr = iterator;
+        for (int x = 0; x < current_solution[iterator].customers.size(); x++) {
+            customer_nr_on_route = x;
+            customer_nr = current_solution[iterator].customers[x];
+            // cout << iterator + 2 << ": " << customer_nr << endl;
+            for (int i = 0; i < current_solution.size(); i++) {
+                if (i == vehicle_nr) {
+                    continue;
+                }
+                if (customers[customer_nr].demand > current_solution[i].act_capacity) {
+                    continue;
+                }
+
+                int real_time, possible_time = 0;
+                int current_position = 0;
+                vector<Truck> possible_solution;
+                Truck possible_new_truck(capacity);
+                bool pushed = false;
+                for (int j = 0; j < current_solution[i].customers.size(); j++) {
+                    if (!pushed) {
+                        real_time += max(matrix[current_position][current_solution[i].customers[j]], (float)customers[current_solution[i].customers[j]].ready_time - real_time) + customers[current_solution[i].customers[j]].service_time;
+                        possible_time += max(matrix[current_position][customer_nr], (float)customers[customer_nr].ready_time - possible_time) + customers[customer_nr].service_time;
+                        possible_time += max(matrix[customer_nr][j], (float)customers[current_solution[i].customers[j]].ready_time - possible_time) + customers[current_solution[i].customers[j]].service_time;
+                        if (possible_time <= real_time) {
+                            possible_new_truck.customers.push_back(customer_nr);
+                            pushed = true;
+                        } else {
+                            possible_time = real_time;
+                        }
+                        current_position = current_solution[i].customers[j];
+                    }
+                    possible_new_truck.customers.push_back(current_solution[i].customers[j]);
+                }
+
+                if (!pushed) {
+                    possible_new_truck.customers.push_back(customer_nr);
+                    pushed = true;
+                }
+
+                if (pushed) {
+                    for (int j = 0; j < current_solution.size(); j++) {
+                        if (i != j) {
+                            possible_solution.push_back(current_solution[j]);
+                        } else {
+                            possible_solution.push_back(possible_new_truck);
+                        }
+                    }
+                    possible_solution[vehicle_nr].customers.erase(possible_solution[vehicle_nr].customers.begin() + customer_nr_on_route);
+
+                    // changing act_time in line where customer was deleted and where customer was put and act_capacity
+                    bool validate_route = true;
+
+                    possible_solution[vehicle_nr].act_time = 0;
+                    possible_solution[vehicle_nr].act_capacity = capacity;
+                    current_position = 0;
+                    for (int j = 0; j < possible_solution[vehicle_nr].customers.size(); j++) {
+                        possible_solution[vehicle_nr].act_time += max(matrix[current_position][possible_solution[vehicle_nr].customers[j]], customers[possible_solution[vehicle_nr].customers[j]].ready_time - possible_solution[vehicle_nr].act_time) + customers[possible_solution[vehicle_nr].customers[j]].service_time;
+                        possible_solution[vehicle_nr].act_capacity -= customers[possible_solution[vehicle_nr].customers[j]].demand;
+                        current_position = possible_solution[vehicle_nr].customers[j];
+                    }
+                    possible_solution[vehicle_nr].act_time += matrix[current_position][0];
+
+                    possible_solution[i].act_time = 0;
+                    possible_solution[i].act_capacity = capacity;
+                    current_position = 0;
+                    for (int j = 0; j < possible_solution[i].customers.size(); j++) {
+                        possible_solution[i].act_time += max(matrix[current_position][possible_solution[i].customers[j]], customers[possible_solution[i].customers[j]].ready_time - possible_solution[i].act_time) + customers[possible_solution[i].customers[j]].service_time;
+                        possible_solution[i].act_capacity -= customers[possible_solution[i].customers[j]].demand;
+                        if (possible_solution[i].act_time - customers[possible_solution[i].customers[j]].service_time > customers[possible_solution[i].customers[j]].due_date) {
+                            validate_route = false;
+                        }
+                        current_position = possible_solution[i].customers[j];
+                    }
+                    possible_solution[i].act_time += matrix[current_position][0];
+                    if (possible_solution[i].act_time > customers[0].due_date) {
+                        validate_route = false;
+                    }
+
+                    if (possible_solution[vehicle_nr].customers.size() == 0) {
+                        // cout << "Empty truck" << endl;
+                        possible_solution.erase(possible_solution.begin() + vehicle_nr);
+                    }
+
+                    if (validate_route) {
+                        neighbourhood.push_back(possible_solution);
+                        if (new_solution_better(best_solution, possible_solution)) {
+                            // cout << "Better" << endl;
+                            found_better = true;
+                        }
+                    }
+                }
+            }
+            if (found_better) {
+                    break;
+                }
+        }
+        iterator++;
+    }
+    return;
+}
+
 bool in_tabu2(vector<vector<Truck>> &tabu_list, vector<Truck> &solution) {
     auto compare_trucks = [](Truck t1, Truck t2) {
         return equal(t1.customers.begin(), t1.customers.end(), t2.customers.begin());
@@ -326,16 +454,6 @@ bool in_tabu(vector<vector<Truck>> &tabu_list, vector<Truck> &solution) {
     return false;
 }
 
-bool new_solution_better(vector<Truck> &prev_solution, vector<Truck> &new_solution) {
-    if (new_solution.size() < prev_solution.size()) {
-        return true;
-    }
-    if (new_solution.size() == prev_solution.size() && distance_sum(new_solution) < distance_sum(prev_solution)) {
-        return true;
-    }
-    return false;
-}
-
 void tabu_search(vector<Customer> &customers, vector<vector<float>> &matrix, vector<Truck> &trucks, int capacity, ofstream &output_file, int tabu_size) {
     vector<vector<Truck>> neigbourhood;
     vector<Truck> best_solution;
@@ -349,9 +467,11 @@ void tabu_search(vector<Customer> &customers, vector<vector<float>> &matrix, vec
 
     int how_many = 1;
     write_to_file(output_file, best_solution);
+    int iterator = 0;
 
     while (true) {
-        get_neighbourhood(customers, matrix, current_solution, neigbourhood, capacity);
+        get_neighbourhood2(customers, matrix, current_solution, neigbourhood, capacity, best_solution, iterator);
+        // get_neighbourhood(customers, matrix, current_solution, neigbourhood, capacity);
         sort(neigbourhood.begin(), neigbourhood.end(), compare_solutions2);
         // cout << "Sort" << endl;
         // sort_neighbourhood(neigbourhood);
